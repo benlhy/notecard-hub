@@ -2,21 +2,21 @@
 
 The Notecard Hub is a proof of concept of designing a general-purpose hub for sending data points from BLE and Lora-enabled devices to the cloud using Notecard.
 
-This Hub will form the basis of Notecard projects as it has low-power connectivity options for collecting data, and utilizes Blues Wireless's cloud platform for zero-configuration provisioning and data collection. The data is then piped to AWS services to demonstrate the cloud-to-cloud capability of the
+This Hub will form the basis of Notecard projects as it has low-power connectivity options for collecting data, and utilizes Blues Wireless's cloud platform for zero-configuration provisioning and data collection. The data is then piped to AWS services to demonstrate the cloud-to-cloud capability of notehub.io.
 
 # Exploratory Aspects
 
-This project explores a few new features:
+This project explores a few features:
 
 1. Implmenting the Notecard with BLE and Lora
 2. Building a simple backend and dashboard with AWS services
 3. Testing the Notecard's power resilience in the field
 
-# Technologies
+# Technologies & Parts
 
-1. For prototyping, we will use the Feather nRF52840 Express for ease of development
+1. For prototyping, we will use the Feather nRF52840 Express for ease of development with an attached Lipo battery.
 2. A Lora module is used to further expand the number of communication protocols and range of the unit.
-3.
+3. A global Notecard (NOTE-NBGL-500) is used with a Notecarrier-AA.
 
 # Steps
 
