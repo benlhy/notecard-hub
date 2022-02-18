@@ -1,16 +1,22 @@
 #include <Arduino.h>
 #include <bluefruit.h>
 #include <Notecard.h>
+#include <Wire.h>
 #include "advReport.h"
+#include <iterator> // required for std::begin()
 
-//#define NOTECARD_ENABLED
+
+#define NOTECARD_ENABLED
 #define ProductID "com.gmail.limhanyangb:start"
+#define MAX_BLE_REPORTS 20
 
 // Function Prototypes
 void scan_callback(ble_gap_evt_adv_report_t* report);
 bool match_GAP_type(ble_gap_evt_adv_report_t* report, uint16_t GAP_type);
+int add_to_list(AdvReport *array[], int array_len, AdvReport *newReport); 
 
-Notecard notecard;
+Notecard notecard;  
+AdvReport *scan_array[MAX_BLE_REPORTS];
 
 //0000xxxx-0000-1000-8000-00805F9B34FB
 
@@ -24,6 +30,8 @@ const uint8_t ENV_UUID_16_SERVICE[] = {
   0x1A, 0x18
 };
 
+int gbl_array_num = 0;
+
 // Process the custom advertising report so that we don't have to connect to the device
 
 
@@ -35,10 +43,9 @@ void setup() {
   Serial.println("Beginning Scan!");
   
   // Setup Notecard in I2C mode
-  #ifdef NOTECARD_ENABLED
   Wire.begin();
+  #ifdef NOTECARD_ENABLED
   notecard.begin();
-  
 
   // Setup Notecard service request
   J *req = notecard.newRequest("hub.set"); 
@@ -90,9 +97,17 @@ void scan_callback(ble_gap_evt_adv_report_t* report)
   // seeking for Service data type
   //Serial.printBuffer(report->data.p_data, report->data.len, '-');
   if (report->rssi > -50 && match_GAP_type(report,BLE_GAP_AD_TYPE_SERVICE_DATA) ) {
-      AdvReport newReport;
-  newReport.processAdvData(report);
-  Serial.printf("Temperature: %d\r\n",newReport.temperature);
+    
+    AdvReport BLEReport;
+    BLEReport.processAdvData(report);
+
+    Serial.printf("Temperature: %d\r\n",BLEReport.temperature);
+    Serial.printBufferReverse(BLEReport.mac,6,':');
+
+    if(add_to_list(scan_array,gbl_array_num, &BLEReport)) {
+      gbl_array_num++; // increment the array size
+    }
+
     Serial.println("Timestamp Addr              Rssi Data");
 
     Serial.printf("%09d ", millis());
@@ -121,13 +136,28 @@ void scan_callback(ble_gap_evt_adv_report_t* report)
   // For Softdevice v6: after received a report, scanner will be paused
   // We need to call Scanner resume() to continue scanning
   Bluefruit.Scanner.resume();
+}
 
-  
 
 
-  
+// Check for similar mac addresses
+int add_to_list(AdvReport *array[], int array_len, AdvReport *newReport) {
+  int count = 0;
+  // loop will not run if array len == 0 because condition is false
+  for (int i = 0; i<array_len;i++) {
+    if( memcmp(array[i]->mac, newReport->mac, 6)) {
+      // if we have the same mac, ignore
+      count++;
+    }
+  }
+  // count == array_len
+  if (count!=array_len) {
+    array[array_len+1] = newReport;
+    return 1;
+  } else {
+    return 0;
+  }
 
-  
 }
 
 void loop() {
@@ -137,14 +167,44 @@ void loop() {
   // LoRa communication
 
   #ifdef NOTECARD_ENABLED
+
+  // Check if it is time to send a request
+
+  // Stop the bluetooth scan
+  Bluefruit.Scanner.stop();
+
+  // Create a notecard request
   J *req = notecard.newRequest("note.add");
   if (req != NULL) {
-    J *body = JCreateObject()
+    J *body = JCreateObject();
     if (body != NULL) {
-      JAddNumberToObject(body, "temp", 24);
-    }
-  }
-  #endif
+      // using the iterator using the non-member begin and end function
+      for (auto scan_report = std::begin(scan_array); scan_report != std::end(scan_array); ++scan_report) {
+        J *bodyObject = JCreateObject();
+        if (bodyObject != NULL) {
+          // need to deference the iterator THEN the pointer
+          JAddStringToObject(bodyObject,"mac",(const char*)(*scan_report)->mac);
+          JAddNumberToObject(bodyObject,"temp",(*scan_report)->temperature);
+          JAddNumberToObject(bodyObject,"hum",(*scan_report)->humidity);
+          JAddNumberToObject(bodyObject,"batt_p",(*scan_report)->battery_percentage);
+          JAddNumberToObject(bodyObject,"batt_v",(*scan_report)->battery_percentage);
+        }
 
-  // put your main code here, to run repeatedly:
+      }
+      //JAddNumberToObject(body, "temp", );
+    }
+    notecard.sendRequest(req);
+  }
+
+  // Request completed sending
+
+  // Clear array but keep the reference to the global array
+  // Using the range-based for-loop syntax
+  for (auto array_elm : scan_array) {
+    delete array_elm;
+  }
+  gbl_array_num = 0; //reset to 0
+  Bluefruit.Scanner.start(0); // start BLE scanner  
+  #endif // NOTECARD_ENABLED
+
 }

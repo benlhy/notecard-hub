@@ -17,8 +17,10 @@ This project explores a few features:
 1. For prototyping, we will use the Feather nRF52840 Express for ease of development with an attached Lipo battery.
 2. A Lora module is used to further expand the number of communication protocols and range of the unit.
 3. A global Notecard (NOTE-NBGL-500) is used with a Notecarrier-AA.
+4. For testing BLE, two Mi Thermometers flashed with the ATC advertising code are used
+5. For testing LoRa, a LoRa module reading BLE is used
 
-# Steps
+# Journal
 
 1. Update circuitpython on the nRF52840 Feather
 2. Add the [notecard library](https://github.com/blues/note-python) to the `lib` folder of the Feather
@@ -27,6 +29,7 @@ This project explores a few features:
 5. Connect a LiPo battery on the Feather and connect the `Batt` pin to the `V+` pin on the NoteCarrier
    1. This prevents brown-outs when it is connecting to the cell tower - which results in Errno: 19 for I2C and empty JSON responses for UART
 6. Unfortunately the CircuitPython BLE code is not mature enough to be used effectively with generic devices. Switching to using PlatformIO for programming
+7. Consider using vectors
 
 # Questions
 
@@ -43,3 +46,7 @@ This project explores a few features:
 2. LTE antenna - https://www.digikey.sg/en/products/detail/pulselarsen-antennas/W3907B0100/7667474
 3. note-arduino - https://github.com/blues/note-arduino/tree/master/examples
 4. Bluefruit central - https://github.com/adafruit/Adafruit_nRF52_Arduino/tree/master/libraries/Bluefruit52Lib/examples/Central
+5. ATC flashing code - https://github.com/pvvx/ATC_MiThermometer#reading-measurements-in-advertising-mode
+6. BLE Generic Access Profile (GAP) reference - https://www.bluetooth.com/specifications/bluetooth-core-specification/
+7. Assigned numbers (GAP) - https://www.bluetooth.com/specifications/assigned-numbers/
+8. BLE ADV Reference - https://docs.silabs.com/bluetooth/latest/general/adv-and-scanning/bluetooth-adv-data-basics

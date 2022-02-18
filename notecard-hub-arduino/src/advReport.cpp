@@ -1,6 +1,9 @@
 #include "advReport.h"
 
-
+/*
+*   Process the BLE advertisement report
+*   
+*/
 void AdvReport::processAdvData(ble_gap_evt_adv_report_t* report) {
   for (int i=0;i<6;i++) {
     mac[i] = report->data.p_data[9-i];
@@ -12,3 +15,4 @@ void AdvReport::processAdvData(ble_gap_evt_adv_report_t* report) {
   measurement_count = report->data.p_data[17];
   flags = report->data.p_data[18];
 }
+

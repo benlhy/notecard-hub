@@ -14,6 +14,7 @@ class AdvReport{
     uint8_t flags;
 
     void processAdvData(ble_gap_evt_adv_report_t* report);
+    char generateMacString(void);
 };
 
 #endif
