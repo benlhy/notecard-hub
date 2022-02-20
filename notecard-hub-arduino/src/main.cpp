@@ -4,9 +4,12 @@
 #include <Wire.h>
 #include "advReport.h"
 #include <iterator> // required for std::begin()
+#include <SPI.h>
+#include <LoRa.h>
 
 
 #define NOTECARD_ENABLED
+#define LORA_ENABLED
 #define ProductID "com.gmail.limhanyangb:start"
 #define MAX_BLE_REPORTS 20
 
@@ -16,19 +19,8 @@ bool match_GAP_type(ble_gap_evt_adv_report_t* report, uint16_t GAP_type);
 int add_to_list(AdvReport *array[], int array_len, AdvReport *newReport); 
 
 Notecard notecard;  
+auto counter = 0;
 AdvReport *scan_array[MAX_BLE_REPORTS];
-
-//0000xxxx-0000-1000-8000-00805F9B34FB
-
-const uint8_t ENV_UUID_SERVICE[] =
-{
-    0xFB, 0x34, 0x9B, 0x5F, 0x80, 0x00, 0x00, 0x80,
-    0x00, 0x10, 0x00, 0x00, 0x1A, 0x18, 0x00, 0x00
-};
-
-const uint8_t ENV_UUID_16_SERVICE[] = {
-  0x1A, 0x18
-};
 
 int gbl_array_num = 0;
 
@@ -54,6 +46,13 @@ void setup() {
   JAddNumberToObject(req, "outbound", 2); // check for outgoing data every 2 minutes
   JAddNumberToObject(req, "inbound", 60); // check for downloads once every hour
   notecard.sendRequest(req); // send the request
+  #endif
+
+  #ifdef LORA_ENABLED
+  if(!LoRa.begin(915E6)){
+    Serial.println("Lora init failed");
+  }
+
   #endif
 
 
@@ -162,9 +161,16 @@ int add_to_list(AdvReport *array[], int array_len, AdvReport *newReport) {
 
 void loop() {
 
-  // BLE scan for and get temp/hum
+  // BLE scan for and get temp/hum - covered in  scan
 
   // LoRa communication
+  #ifdef LORA_ENABLED
+  LoRa.beginPacket();
+  LoRa.print("hello ");
+  LoRa.print(counter);
+  LoRa.endPacket();
+  counter++;
+  #endif // LORA_ENABLED
 
   #ifdef NOTECARD_ENABLED
 

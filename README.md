@@ -2,7 +2,7 @@
 
 The Notecard Hub is a proof of concept of designing a general-purpose hub for sending data points from BLE and Lora-enabled devices to the cloud using Notecard.
 
-This Hub will form the basis of Notecard projects as it has low-power connectivity options for collecting data, and utilizes Blues Wireless's cloud platform for zero-configuration provisioning and data collection. The data is then piped to AWS services to demonstrate the cloud-to-cloud capability of notehub.io.
+This Hub will form the basis of my future Notecard projects as it has low-power connectivity options for collecting data, and utilizes Blues Wireless's cloud platform for zero-configuration provisioning and data collection. The data is then piped to AWS services to demonstrate the cloud-to-cloud capability of notehub.io.
 
 # Exploratory Aspects
 
@@ -10,7 +10,7 @@ This project explores a few features:
 
 1. Implmenting the Notecard with BLE and Lora
 2. Building a simple backend and dashboard with AWS services
-3. Testing the Notecard's power resilience in the field
+3. Testing the Notecard's power resilience and energy harvesting in the field
 
 # Technologies & Parts
 
@@ -18,7 +18,7 @@ This project explores a few features:
 2. A Lora module is used to further expand the number of communication protocols and range of the unit.
 3. A global Notecard (NOTE-NBGL-500) is used with a Notecarrier-AA.
 4. For testing BLE, two Mi Thermometers flashed with the ATC advertising code are used
-5. For testing LoRa, a LoRa module reading BLE is used
+5. For testing LoRa, a LoRa module connected to the Feather is used and will use the same data formwat as the ATC advertising code.
 
 # Journal
 
@@ -29,7 +29,8 @@ This project explores a few features:
 5. Connect a LiPo battery on the Feather and connect the `Batt` pin to the `V+` pin on the NoteCarrier
    1. This prevents brown-outs when it is connecting to the cell tower - which results in Errno: 19 for I2C and empty JSON responses for UART
 6. Unfortunately the CircuitPython BLE code is not mature enough to be used effectively with generic devices. Switching to using PlatformIO for programming
-7. Consider using vectors
+7. Consider using vectors for list management
+8. The RadioHead library does not work for the nRF52840, as well as numerous recorded difficulties by others in attempting to use it with the Arduino Nano 33 BLE Sense.
 
 # Questions
 
