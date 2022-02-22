@@ -15,10 +15,12 @@ This project explores a few new features:
 # Steps
 1. Update circuitpython on the nRF52840 Feather
 2. Add the [notecard library](https://github.com/blues/note-python) to the `lib` folder of the Feather
-3. Install [Mu editor](https://codewith.mu/) - issues: doesn't launch
-4. The I2C code for the transaction doesn't work
+3. Install [Mu editor](https://codewith.mu/) - issues: doesn't launch on Windows 10 - changing to VSCode
+4. `from notecard import hub` results in an error
 5. Connect a LiPo battery on the Feather and connect the `Batt` pin to the `V+` pin on the NoteCarrier
    1. This prevents brown-outs when it is connecting to the cell tower - which results in Errno: 19 for I2C and empty JSON responses for UART
+
+
 # Questions
 1. What is the mitigation plan if Blues Wireless does not exist before the 10 years is up?
 2. If I didn't want to use Blue's wireless platform - how do I migrate off it completely?
@@ -26,6 +28,7 @@ This project explores a few new features:
 4. What is the SLA for Cloud Platform?
 5. How does the WiFi access point location work?
 6. Are there any commercial success stories for the NoteCard?
+7. What parts of the data is counted against my limit? e.g. health, session, env data -> I don't control this
 
 
 # References
