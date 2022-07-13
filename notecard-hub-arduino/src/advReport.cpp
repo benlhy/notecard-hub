@@ -7,6 +7,8 @@
 void AdvReport::processAdvData(ble_gap_evt_adv_report_t* report) {
   for (int i=0;i<6;i++) {
     mac[i] = report->data.p_data[9-i];
+    Serial.printf("%02X",mac[i]);
+    Serial.print(":");
   }
   temperature = (int16_t)(report->data.p_data[11] << 8 | report->data.p_data[10]);
   humidity = (uint16_t)(report->data.p_data[13] << 8 | report->data.p_data[12]);

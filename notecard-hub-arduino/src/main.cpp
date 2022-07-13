@@ -7,10 +7,14 @@
 #include <SPI.h>
 #include <LoRa.h>
 
-
-#define NOTECARD_ENABLED
-#define LORA_ENABLED
+//#define NOTECARD_WIFI
+//#define NOTECARD_ENABLED
+//#define LORA_ENABLED
 #define ProductID "com.gmail.limhanyangb:start"
+#define SSID "JBW"
+#define PASSWORD "130114042809janbenwin"
+
+
 #define MAX_BLE_REPORTS 20
 
 // Function Prototypes
@@ -26,8 +30,6 @@ int gbl_array_num = 0;
 
 // Process the custom advertising report so that we don't have to connect to the device
 
-
-
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
@@ -37,20 +39,33 @@ void setup() {
   // Setup Notecard in I2C mode
   Wire.begin();
   #ifdef NOTECARD_ENABLED
+  // setup notecard
   notecard.begin();
+  notecard.setDebugOutputStream(Serial);
+
+  #ifdef NOTECARD_WIFI
+  J *req = notecard.newRequest("card.wifi");
+  JAddStringToObject(req, "ssid", SSID);
+  JAddStringToObject(req, "password", PASSWORD);
+  notecard.sendRequest(req);  
+
+
+  #endif
 
   // Setup Notecard service request
   J *req = notecard.newRequest("hub.set"); 
-  JAddStringToObject(req, "product", ProductID); // set the product ID
-  JAddStringToObject(req, "mode", "periodic"); // connect periodically
-  JAddNumberToObject(req, "outbound", 2); // check for outgoing data every 2 minutes
-  JAddNumberToObject(req, "inbound", 60); // check for downloads once every hour
-  notecard.sendRequest(req); // send the request
+  JAddStringToObject(req, "product", ProductID);  // set the product ID
+  JAddStringToObject(req, "mode", "continuous");
+  //JAddStringToObject(req, "mode", "periodic");    // connect periodically
+  //JAddNumberToObject(req, "outbound", 3);         // check for outgoing data every 15 minutes
+  //JAddNumberToObject(req, "inbound", 60);         // check for downloads once every hour
+  notecard.sendRequest(req);                      // send the request
   #endif
 
   #ifdef LORA_ENABLED
   if(!LoRa.begin(915E6)){
     Serial.println("Lora init failed");
+
   }
 
   #endif
@@ -64,7 +79,7 @@ void setup() {
   //Bluefruit.Scanner.filterUuid(0x181A);
   Bluefruit.Scanner.start(0);
 
-  // TODO: Add lora init 
+ 
 }
 
 // Example data 
@@ -104,6 +119,7 @@ void scan_callback(ble_gap_evt_adv_report_t* report)
     Serial.printBufferReverse(BLEReport.mac,6,':');
 
     if(add_to_list(scan_array,gbl_array_num, &BLEReport)) {
+      Serial.println("Added to array");
       gbl_array_num++; // increment the array size
     }
 
@@ -150,7 +166,7 @@ int add_to_list(AdvReport *array[], int array_len, AdvReport *newReport) {
     }
   }
   // count == array_len
-  if (count!=array_len) {
+  if (count==array_len) {
     array[array_len+1] = newReport;
     return 1;
   } else {
@@ -162,55 +178,85 @@ int add_to_list(AdvReport *array[], int array_len, AdvReport *newReport) {
 void loop() {
 
   // BLE scan for and get temp/hum - covered in  scan
+  //Serial.print("In loop");
 
   // LoRa communication
   #ifdef LORA_ENABLED
-  LoRa.beginPacket();
-  LoRa.print("hello ");
-  LoRa.print(counter);
-  LoRa.endPacket();
-  counter++;
+  int packetSize = LoRa.parsePacket();
+  if (packetSize) {
+    // received a packet
+    Serial.print("Received packet '");
+
+    // read packet
+    while (LoRa.available()) {
+      Serial.print((char)LoRa.read());
+    }
+
+    // print RSSI of packet
+    Serial.print("' with RSSI ");
+    Serial.println(LoRa.packetRssi());
+  }
+
+      // TODO: add to scan_array
+
+        
   #endif // LORA_ENABLED
 
   #ifdef NOTECARD_ENABLED
 
   // Check if it is time to send a request
+  if (gbl_array_num>1) {
+    // Stop the bluetooth scan
+    Serial.println("Stopping BLE scan");
+    //Bluefruit.Scanner.stop();
+    
+    
+    // Create a notecard request
+    J *req = notecard.newRequest("note.add");
+    JAddBoolToObject(req, "sync", true);
 
-  // Stop the bluetooth scan
-  Bluefruit.Scanner.stop();
+    if (req != NULL) {
+      J *body = JCreateObject();
+      if (body != NULL) {
+        // using the iterator using the non-member begin and end function
+        // for each element in scan_array
+        for (auto scan_report = std::begin(scan_array); scan_report != std::end(scan_array); ++scan_report) {
+          J *bodyObject = JCreateObject();
+          if (bodyObject != NULL) {
+            // need to deference the iterator THEN the pointer
+            for(int i = 0;i<6;i++) {
+              Serial.println((*scan_report)->mac[i]);
 
-  // Create a notecard request
-  J *req = notecard.newRequest("note.add");
-  if (req != NULL) {
-    J *body = JCreateObject();
-    if (body != NULL) {
-      // using the iterator using the non-member begin and end function
-      for (auto scan_report = std::begin(scan_array); scan_report != std::end(scan_array); ++scan_report) {
-        J *bodyObject = JCreateObject();
-        if (bodyObject != NULL) {
-          // need to deference the iterator THEN the pointer
-          JAddStringToObject(bodyObject,"mac",(const char*)(*scan_report)->mac);
-          JAddNumberToObject(bodyObject,"temp",(*scan_report)->temperature);
-          JAddNumberToObject(bodyObject,"hum",(*scan_report)->humidity);
-          JAddNumberToObject(bodyObject,"batt_p",(*scan_report)->battery_percentage);
-          JAddNumberToObject(bodyObject,"batt_v",(*scan_report)->battery_percentage);
+            }
+            
+            //JAddStringToObject(bodyObject,"mac",(const char*)(*scan_report)->mac);
+            //JAddNumberToObject(bodyObject,"temp",(*scan_report)->temperature);
+            //JAddNumberToObject(bodyObject,"hum",(*scan_report)->humidity);
+            //JAddNumberToObject(bodyObject,"batt_p",(*scan_report)->battery_percentage);
+            //JAddNumberToObject(bodyObject,"batt_v",(*scan_report)->battery_percentage);
+          }
+          JAddItemToObject(body,(const char*)(*scan_report)->mac,bodyObject);
         }
-
+        //JAddNumberToObject(body, "temp", );
       }
-      //JAddNumberToObject(body, "temp", );
+      JAddItemToObject(req,"body",body);
+
+
+      Serial.println("Sending request");
+      notecard.sendRequest(req);
+      Serial.println("Request send complete");
     }
-    notecard.sendRequest(req);
+    // Request completed sending
+    // Clear array but keep the reference to the global array
+    // Using the range-based for-loop syntax
+    for (auto array_elm : scan_array) {
+      delete array_elm;
+    }
+    gbl_array_num = 0; //reset to 0
+    Serial.println("Restarting scan...");
+    //Bluefruit.Scanner.start(); // start BLE scanner
+    Serial.println("Scan restarted.");  
   }
-
-  // Request completed sending
-
-  // Clear array but keep the reference to the global array
-  // Using the range-based for-loop syntax
-  for (auto array_elm : scan_array) {
-    delete array_elm;
-  }
-  gbl_array_num = 0; //reset to 0
-  Bluefruit.Scanner.start(0); // start BLE scanner  
   #endif // NOTECARD_ENABLED
 
 }
